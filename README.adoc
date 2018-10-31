@@ -1,0 +1,135 @@
+= beeclust
+:toc:
+:note-caption: :information_source:
+:warning-caption: :warning:
+
+
+BeeClust swarming algorithm with Python's NumPy.
+
+
+== Zadání úkolu
+
+Vaším úkolem za 5 bodů je vytvořit třídu `BeeClust` v modulu `beeclust`: simulaci
+shlukovacího algoritmu http://heikohamann.de/pub/schmickl_beeclust_2011.pdf[BeeClust].
+Tento algoritmus je založený na chování včel v přírodě a jejich rojení v místech s
+ideální teplotou (přibližně 32–38°C). Hlavní vlastností je, že včely jsou hloupé a
+neví nic o svém okolí a nemají téměř žádnou paměť. Tento algoritmus lze v praxi využívat
+při práci s jednoduchými autonomními roboty.
+
+
+=== Popis algoritmu 🐝
+
+Pro zjednodušení pracujeme s 2D mřížkou s diskrétním časem (jednotlivé "tiky") a diskrétním
+prostorem (celočíselné souřadnice).
+
+1. Včela se pohybuje korelovanou náhodnou procházkou (s pravděpodobností `p_changedir`
+   se změní směr pohybu včely náhodně jedním ze zbývajících tří směrů, jinak je směr pohybu
+   zachován). Jestliže se před tím nepohybovala (na počátku nebo byla *zastavena*), vybírá
+   se směr dalšího kroku náhodně ze všech čtyř směrů.
+2. Pokud včela narazí do překážky (zeď, zdroj tepla/chladu), s pravděpodobností `p_wall`
+   se *zastaví*, jinak se otočí o 180° a v příštím kroku pokračuje v pohybu (krok 1).
+3. Pokud včela potká (narazí na)  jinou včelu, s pravděpodobností `p_meet` se *zastaví*,
+   jinak v příštím kroku pokračuje v pohybu (krok 1).
+4. Pokud má včela *zastavit*, zůstává na místě po dobu `t`, která závisí na teplotě pozice,
+   kde stojí (viz vzorec níže). Po uplynutí času `t` se pokračuje krokem 1.
+
+
+Pro výpočet času *zastavení* používáme vzorec `t = int(k_stay / (1 + abs(T_ideal - T_local)))`, kde:
+
+* `k_stay` je nastavitelný koeficient
+* `T_ideal` je teplota, kterou mají včely nejradši
+* `T_local` je teplota aktuální pozice včely
+
+Minimálně se však čeká dobu `min_wait` (nastavitelná konstanta).
+
+
+=== Mapa
+
+Včely se pohybují po 2D mapě reprezentované maticí celých čísel s následujícím kódováním:
+
+* `0` = prázdná pozice
+* `1` = včela mířící na sever (nahoru)
+* `2` = včela mířící na východ (vpravo)
+* `3` = včela mířící na jih (dolů)
+* `4` = včela mířící na západ (vlevo)
+* `5` = zeď (s absolutní tepelnou izolací)
+* `6` = ohřívač, zdroj tepla `T_heater &#8805; T_env`
+* `7` = chladič, zdroj chladu `T_cooler &#8804; T_env`
+* `-t` = včela čekající `t` (`-1` je reprezentace včely, která neví, kam jde, v příštím
+  kroku se rozhodne - změní se na včelu reprezentovanou číslem od `1` do `4`, a v dalším
+  kroku se začne pohybovat dle popisu výše)
+
+Pozice mimo definovanou mapu fungují jako zeď – tzn. nelze se pohybovat ani propagovat
+teplo přes okraje mapy.
+
+=== Teplota
+
+Teplo se po mapě šíří ve všech 8 směrech (narozdíl od pohybu včel) a počítá se v
+reálných číslech typu `float`.
+
+1. Na pozici, kde je zeď, teplota není definována (`NaN`)
+2. Na pozici, kde je ohřívač, je vždy teplota `T_heater`
+3. Na pozici, kde je chladič, je vždy teplota `T_cooler`
+4. Na pozicích, kde nic není nebo jsou tam včely, se teplota počítá podle vzorce:
+
+  * `T = T_env + k_temp * (max(heating, 0) - max(cooling, 0))`
+  * `heating = (1 / dist_heater) * (T_heater - T_env)`
+  * `cooling = (1 / dist_cooler) * (T_env - T_cooler)`
+  * vzdálenost ohřívače `dist_heater` (resp. chladiče) je vzdálenost *nejbližšího*
+    ohřívače (resp. chladiče) v počtu kroků 8 směry s uvažováním zdí a ostatních
+    chladičů/ohřívačů jako překážek
+  * `k_temp` je nastavitelný koeficient ovlivňující tepelnou vodivost prostředí
+
+=== Rozhraní třídy `BeeClust`
+
+Vámi implementovaná třída bude splňovat specifikované rozhraní:
+
+
+[source,python]
+----
+class BeeClust:
+
+    def __init__(self, map, p_changedir=0.2, p_wall=0.8, p_meet=0.8, k_temp=0.9,
+                 k_stay=50, T_ideal=35, T_heater=40, T_cooler=5, T_env=22, min_wait=2):
+        ...
+
+    ...  # required methods & properties (see assignment & tests)
+
+b = BeeClust(some_numpy_map)
+----
+
+* `b.map` obsahuje mapu jako `numpy` celočíselnou matici
+* `b.heatmap` obsahuje tepelnou mapu  jako `numpy` matici reálných čísel
+* `b.bees` obsahuje seznam dvojic `(x, y)` reprezentující pozice včel
+* `b.swarms` obsahuje seznam seznamů dvojic `(x, y)` reprezentující pozice se sousedícími
+  včelami (4 směry); například `[[(0,0), (0,1), (0,2), (1,0)], [(2,3)], [(3,5), (4,5)]]` pro
+  mapu se sedmi včelami ve třech rojích; na pořadí v seznamech nezáleží
+* `b.score` vypočítá průměrnou teplotu včel
+* `b.tick()` provede 1 krok simulace algoritmu a vrátí počet včel, které se pohnuly
+* `b.forget()` všechny včely zapomenou svoji dobu čekání a směr, kterým šly; v příštím kroku
+  vylosují náhodně směr a v dalším kroku se opět dají do pohybu
+* `b.recalculate_heat()` vynutí přepočtení `b.heatmap` (například po změně mapy `b.map`
+  bez tvorby nové simulace)
+
+== Automatické testy
+
+Součástí zadání jsou testy ve složce `tests`.
+Pro spuštění testů nainstalujte do virtuálního prostředí balíky `pytest` a `numpy`.
+Žádný speciální setup není vyžadován.
+Testy trvají řádově nižší jednotky vteřin, pokud se vaše algoritmy nezacyklí.
+
+[source,console]
+$ python -m pytest -v tests
+
+Testy si můžete zkopírovat k sobě do repozitáře, považujte je za Public Domain.
+Některé testy obsahují vysvětlující komentář.
+
+Testy musí jít spustit z kořenového adresáře vašeho repozitáře a všechny musí projít.
+Je to podmínka nutná (nikoli však dostačující) k získání maximálního počtu bodů.
+
+== Odevzdání úkolu
+
+Odkaz na repozitář s aplikací nám pošlete e-mailem.
+Pro odevzdání v repozitáři (jiný než pro `filabel` a `pandas`) nastavte tag `v0.1`.
+
+Termín odevzdání je u této úlohy klasicky v pondělí (včetně) za 12 dní.
