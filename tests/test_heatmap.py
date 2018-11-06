@@ -178,3 +178,13 @@ def test_score_two_bees_heater_cooler():
     simple_map[2, 2] = 3
     b = BeeClust(simple_map)
     assert math.isclose(b.score, 22.675)
+
+
+def test_score_changes():
+    simple_map = zeros8((3, 1))
+    simple_map[1, 0] = 1
+    simple_map[2, 0] = HEATER
+    b = BeeClust(simple_map, p_changedir=0)
+    score = b.score
+    b.tick()
+    assert b.score < score
