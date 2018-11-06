@@ -45,3 +45,14 @@ def test_all_bees_in_bees():
     for x in range(3):
         for y in range(4):
             assert (x, y) in sbt(b.bees)
+
+
+def test_bees_change_after_tick():
+    simple_map = zeros8((2, 2))
+    simple_map[1, 0] = 1
+    b = BeeClust(simple_map, p_changedir=0)
+    assert len(b.bees) == 1
+    assert sbt(b.bees)[0] == (1, 0)
+    b.tick()
+    assert len(b.bees) == 1
+    assert sbt(b.bees)[0] != (1, 0)

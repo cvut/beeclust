@@ -59,3 +59,14 @@ def test_all_bees_in_swarms():
     b = BeeClust(simple_map)
     assert len(b.swarms) == 1
     assert swt(b.swarms) == [[(x, y) for x in range(3) for y in range(4)]]
+
+
+def test_swarms_change_after_tick():
+    simple_map = zeros8((2, 2))
+    simple_map[1, 0] = 1
+    b = BeeClust(simple_map, p_changedir=0)
+    assert swt(b.swarms) == [[(1, 0)]]
+    b.tick()
+    assert len(b.swarms) == 1
+    assert len(swt(b.swarms)[0]) == 1
+    assert swt(b.swarms)[0][0] != (1, 0)
