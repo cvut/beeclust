@@ -77,6 +77,17 @@ def test_bee_doesnt_go_up():
     # bee doesn't go left/right/down are left as an exercise for the reader
 
 
+def test_bee_waits_and_moves():
+    b = BeeClust(loner(-3))
+    assert b.tick() == 0
+    assert b.map[1, 1] == -2
+    assert b.tick() == 0
+    assert b.map[1, 1] == -1
+    assert b.tick() == 0
+    assert 0 < b.map[1, 1] < 5
+    assert b.tick() == 1
+
+
 def test_bee_keeps_going_right_until_it_hits_end():
     b = BeeClust(numpy.array([[2, 0, 0, 0, 0, 0, 0, 0, 0, 0]]), p_changedir=0)
     for j in range(1, 10):
