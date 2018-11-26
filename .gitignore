@@ -1,2 +1,7 @@
 __pycache__/
 __venv__/
+build/
+dist/
+*.c
+*.so
+*.html
