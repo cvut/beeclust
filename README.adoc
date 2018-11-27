@@ -2,33 +2,83 @@
 :toc:
 :note-caption: :information_source:
 :warning-caption: :warning:
+:experimental:
 
 
-BeeClust swarming algorithm with Python's NumPy with Cython speedup.
+BeeClust swarming algorithm with Python's NumPy with Cython speedup and PyQt GUI.
 
 
 == Zadání úkolu
 
-Vaším úkolem za 5 bodů je zrychlit pomocí Cythonu úkol ze cvičení na NumPy tak, aby zvládal řešit i simulaci o rozměrech cca tisíc × tisíc na moderním počítači (srovnatelném s těmi ve školní učebně) v rozumném čase. Za 10 sekund by měl být schopen 20× spočítat `heatmap` či 20× spočítat `swarms` či 20× provést `tick()`.
+Vaším úkolem za 5 bodů je vytvořit pomocí PyQt5 grafické uživatelské rozhraní,
+které umožní vizualizovat a editovat simulaci BeeClust z úloh na NumPy a Cython.
 
-Úkol musí splňovat všechny náležitosti z úlohy na NumPy + podmínku na čas.
+Pokud teprve začínáte, můžete použít https://github.com/cvut/beeclust/tree/v0.2[naše řešení minulé úlohy].
 
-Pokud teprve začínáte, můžete použít https://github.com/cvut/beeclust/tree/v0.1[naše řešení minulé úlohy].
+Při práci na úkolu doporučujeme adaptovat vytvořený program ze cvičení.
 
-NOTE: Předpokladem pro úspěšné splnění úlohy je,
-že vaše algoritmy jsou „rozumně rychlé“ ze své podstaty.
-Cython může váš program zrychlit, ale pouze řádově,
-např. algoritmus s exponenciálním časem bude mít stále exponenciální čas.
-Před zrychlováním pomocí Cythonu **důrazně doporučujeme** zjistit,
-nakolik se vaše stávající implementace časově liší od té naší,
-a v případě velikých rozdílů se naší implementací přinejmenším inspirovat.
+=== Požadavky na GUI
+
+Vaše grafické rozhraní musí umožňovat:
+
+* vytvářet novou simulaci zadaných rozměrů (prázdnou, náhodně generovanou apod., jak chcete)
+* ukládat a načítat simulaci ve formě NumPy matic do/ze souborů dle volby uživatele
+** pokud se to nepovede, musí aplikace zobrazit chybové hlášení v grafické podobě
+   (tj. ne jen do konzole a aplikace nesmí spadnout)
+** formát souborů viz níže
+* prohlížet simulaci v grafické podobě
+** včetně obrázků včel, zdí, chladičů a ohřívačů
+** pohybující se včely se šipkou, uspané šedě
+*** pokud se simulace celá nevejde do okna, musí mít posuvníky (jako na cvičení)
+** zoom (např. kbd:[Ctrl] + kolečko myši) není nutný, ale je příjemný
+*** pro velké odzoomování nahraďte obrázky barvou
+** přepnutí na zobrazení tepelné mapy v podkladu (místo trávy)
+*** pro toto zobrazení použijte barevný přechod tak, že teplota chladiče je modrá (#0000ff),
+    ohřívače červená (#ff0000) a teplota prostředí zelená (#00ff00)
+* upravovat mapu simulace - tj. přidávat a odebírat včely, zdi, ohřívače a chladiče
+** přidávané včely jsou hodnoty `-1` (můžete nad rámec rozšířit o nastavitelnou hodnotu)
+* akci kliknutím btn:[Tick], které provede a vizualizuje jedno volání metody `.tick()` (nepovinně také
+  klávesovou zkratkou)
+* nastavovat parametry simulace (další argumenty předávané třídě `BeeClust`) pro aktuální
+  simulaci
+* nabídka menu:Help[About] vyvolá okno s informacemi o aplikaci:
+** název
+** stručný popis
+** autor/autoři (vy, případně i my, pokud používáte náš kód)
+** odkaz na repozitář
+** informace o licenci (pozor na licenci PyQt!)
+** informace o použité grafice (pokud není vlastní, například při použití grafiky, která je
+   public domain, není to povinnost, ale považujeme to za slušnost)
+
+=== Grafika
+
+Včely, šipky, zdi, trávu i zdroje tepla a chladu je nutné vykreslovat jako SVG obrázky. Můžete buď
+vytvořit vlastní, použít jiné (pozor na licence) a nebo použít, ty ze složky `beeclust/pics`:
+
+- tráva, zdi a šipky jsou stejné jako ze cvičení od studia https://kenney.nl[Kenney] stáhnutelné 
+z https://opengameart.org/users/kenney[OpenGameArt.org] (Public Domain)
+- https://www.flaticon.com/free-icon/bee_809154#term=bee&page=1&position=75[včela], https://www.flaticon.com/free-icon/light-bulb_167745#term=bulb&page=1&position=6[žárovka] a https://www.flaticon.com/free-icon/snowman_1153009[sněhulák] jsou stáhnutelné
+z https://www.flaticon.com[flaticon.com] od autora https://www.flaticon.com/authors/freepik[Freepik]
+(vyžadováno https://file000.flaticon.com/downloads/license/license.pdf[uvedení autora] za poměrně zvláštních podmínek)
+- pro Public Domain ikonky zkuste https://openclipart.org/search/?query=bee[Openclipart]
+
+=== Formát souboru se simulací
+
+Ukládejte a načítejte pouze mapu. Další parametry
+neukládejte a při načítání použijte výchozí hodnoty. Ukládání a načítání
+řešte takto:
+
+[source,python]
+numpy.savetxt(path, array)
+array = numpy.loadtxt(path, dtype=numpy.int8)
+
+To nám umožní testovat vaší implementaci s vlastními soubory.
+
 
 == Automatické testy
 
-Součástí zadání jsou opět testy ve složce `tests` a jsou doplněny o testy rychlosti
-dle zadání úkolu na Cython.
-Testy rychlosti můžete zakázat pomocí přepínače ``-k "not speed"``,
-nebo naopak povolit jen je pomocí ``-k speed``.
+Vaše řešení musí stále procházet testy z předchozích dvou úloh (jak základní,
+tak i na rychlost), které jsou ve složce `tests`.
 
 Pro spuštění testů nainstalujte do virtuálního prostředí balíky `pytest`, `pytest-timeout` a `numpy`.
 Žádný speciální setup není vyžadován.
@@ -46,15 +96,21 @@ Je to podmínka nutná (nikoli však dostačující) k získání maximálního 
 == Odevzdání úkolu
 
 Odkaz na repozitář s aplikací nám pošlete e-mailem.
-Pro odevzdání v repozitáři (jiný než pro `filabel` a `pandas`) nastavte tag `v0.2`.
+Pro odevzdání ve vašem repozitáři pro projekt `beeclust` nastavte tag `v0.3`.
 
-Následující příkazy musí po instalaci závislostí z `requirements.txt` fungovat:
+Termín odevzdání je u této úlohy prodloužen do pondělí (včetně) za 19 dní.
+
+Aplikace musí jít spustit ve virtualenvu (na systému, pro který jsou PyQt5 wheels na PyPI,
+a na kterém je nainstalovaný překladač C a hlavičkové soubory Pythonu) takto:
 
 [source,console]
-$ python setup.py build_ext -i  # sestaví modul napsaný v Cythonu
-$ python -m pytest -v tests # pustí testy
-$ python -c 'from beeclust import BeeClust; BeeClust(...)'  # lze importovat a použít z Pythonu
+$ python -m pip install -r requirements.txt
+$ python setup.py develop
+$ python -m beeclust
 
-Nepoužívejte `pyximport`.
+Doporučujeme si sekvenci těchto příkazů vyzkoušet v novém virtualenvu, ať nedochází ke
+zbytečným chybám.
 
-Termín odevzdání je u této úlohy klasicky v pondělí (včetně) za 12 dní.
+Aplikace nesmí při žádné akci uživatele zhavarovat (tím nemyslíme, když uživatel udělá
+z terminálu kbd:[Ctrl+C], ale když např. klikne někam, kde jste to nečekali, nebo zruší dialog
+pro výběr jména souboru). Pokud se vám zdá v zadání něco nelogické, prosím, zeptejte se.
