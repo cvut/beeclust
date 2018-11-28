@@ -55,7 +55,7 @@ Vaše grafické rozhraní musí umožňovat:
 Včely, šipky, zdi, trávu i zdroje tepla a chladu je nutné vykreslovat jako SVG obrázky. Můžete buď
 vytvořit vlastní, použít jiné (pozor na licence) a nebo použít, ty ze složky `beeclust/pics`:
 
-- tráva, zdi a šipky jsou stejné jako ze cvičení od studia https://kenney.nl[Kenney] stáhnutelné 
+- tráva, zdi a šipky jsou stejné jako https://github.com/cvut/naucse.python.cz/tree/b181/lessons/intro/pyqt/static/pics[ze cvičení] od studia https://kenney.nl[Kenney] stáhnutelné 
 z https://opengameart.org/users/kenney[OpenGameArt.org] (Public Domain)
 - https://www.flaticon.com/free-icon/bee_809154#term=bee&page=1&position=75[včela], https://www.flaticon.com/free-icon/light-bulb_167745#term=bulb&page=1&position=6[žárovka] a https://www.flaticon.com/free-icon/snowman_1153009[sněhulák] jsou stáhnutelné
 z https://www.flaticon.com[flaticon.com] od autora https://www.flaticon.com/authors/freepik[Freepik]
